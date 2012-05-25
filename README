@@ -1,0 +1,9 @@
+PHP Request Class for Uberspace Accounts
+
+sample
+
+$uberspace = new classUberspaceWebRequest(USERNAME,PASSWORD);
+$uberspace->request();
+$uberspace->close();
+
+print_r($uberspace->arrValue);

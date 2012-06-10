@@ -4,14 +4,18 @@ class classUberspaceWebRequest
 	{
 		function __construct($username, $password)
 		{
+			$strCookieFile = "cookie_".time().".txt";
+		setlocale(LC_ALL, 'de_DE'); 
+		
+		
 			$this -> arrValue = array();
 			$this -> ch = curl_init();
 
 			curl_setopt($this -> ch, CURLOPT_POST, 1);
 			curl_setopt($this -> ch, CURLOPT_USERAGENT, "classUberspaceWebRequest");
 
-			curl_setopt($this -> ch, CURLOPT_COOKIEJAR, 'cookie.txt');
-			curl_setopt($this -> ch, CURLOPT_COOKIEFILE, 'cookie.txt');
+			curl_setopt($this -> ch, CURLOPT_COOKIEJAR, $this->strCookieFile);
+			curl_setopt($this -> ch, CURLOPT_COOKIEFILE, $this->strCookieFile);
 			curl_setopt($this -> ch, CURLOPT_FOLLOWLOCATION, true);
 			curl_setopt($this -> ch, CURLOPT_RETURNTRANSFER, 1);
 			curl_setopt($this -> ch, CURLOPT_HEADER, 1);
@@ -33,6 +37,10 @@ class classUberspaceWebRequest
 
 			$this -> getTransactions();
 			$this -> getSettings();
+			
+			$this->close();
+			
+			
 		}
 
 		function execute($page)
@@ -42,23 +50,28 @@ class classUberspaceWebRequest
 		}
 
 		function close()
-		{
+		{	
 			curl_close($this -> ch);
+			if (file_exists($this->strCookieFile))
+				unlink($this->strCookieFile);
 		}
 
 		function getTransactions()
 		{
 			$this -> execute('https://uberspace.de/dashboard/accounting');
+			
+			$doc = new DomDocument();
+			$doc->validateOnParse = true;
+			$doc->loadHTML($this->content);
 
-			preg_match('#input type="text" name="price" value="(.*?)" size="3" style="text-align: center;" id="accounting_price" />#s', $this -> content, $matches);
-			if (is_array($matches))
+			$id = $doc->getElementById('accounting_price');
+
+			if ($id!=null)
 			{
-				$this -> arrValue['wunschpreis'] = intval(strip_tags($matches[1]));
-				preg_match('#<td id="total" class="last">(.*?)</table>#s', $this -> content, $matches);
-
-				$this -> arrValue['guthaben'] = intval(strip_tags($matches[1]));
+				$this -> arrValue['wunschpreis'] = $this->floatval($id->getAttribute("value"));
+				$idTotal = $doc->getElementById('total');
+				$this -> arrValue['guthaben'] = $this->floatval($idTotal->nodeValue);
 			}
-
 		}
 
 		function getSettings()
@@ -75,6 +88,19 @@ class classUberspaceWebRequest
 
 		}
 
+		
+		function floatval($strValue) 
+		{ 
+			$floatValue = ereg_replace("(^[0-9]*)(\\.|,)([0-9]*)(.*)", "\\1.\\3", $strValue); 
+			if (!is_numeric($floatValue)) 
+				$floatValue = ereg_replace("(^[0-9]*)(.*)", "\\1", $strValue); 
+			if (!is_numeric($floatValue)) 
+				$floatValue = 0; 
+				
+			return $floatValue; 
+		} 
+  
+  
 	}
 
 ?>

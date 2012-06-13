@@ -5,7 +5,9 @@ class classUberspaceWebRequest
 		function __construct($username, $password)
 		{
 			$strCookieFile = "cookie_".time().".txt";
-		setlocale(LC_ALL, 'de_DE'); 
+			
+			libxml_use_internal_errors(true);
+			setlocale(LC_ALL, 'de_DE'); 
 		
 		
 			$this -> arrValue = array();
@@ -35,12 +37,9 @@ class classUberspaceWebRequest
 		{
 			$this -> store = curl_exec($this -> ch);
 
-			$this -> getTransactions();
-			$this -> getSettings();
-			
-			$this->close();
-			
-			
+			$this->getTransactions();
+			$this->getSettings();
+			$this->getDomains();
 		}
 
 		function execute($page)
@@ -54,15 +53,19 @@ class classUberspaceWebRequest
 			curl_close($this -> ch);
 			if (file_exists($this->strCookieFile))
 				unlink($this->strCookieFile);
+				
+				
+			libxml_use_internal_errors(false);
 		}
 
 		function getTransactions()
 		{
-			$this -> execute('https://uberspace.de/dashboard/accounting');
+			$this->execute('https://uberspace.de/dashboard/accounting');
 			
 			$doc = new DomDocument();
-			$doc->validateOnParse = true;
-			$doc->loadHTML($this->content);
+			$doc->validateOnParse = false;
+			$doc->strictErrorChecking = false;
+			$doc->loadHTML(trim($this->content));
 
 			$id = $doc->getElementById('accounting_price');
 
@@ -74,6 +77,42 @@ class classUberspaceWebRequest
 			}
 		}
 
+		
+		function getDomains()
+		{
+			$this -> execute('https://uberspace.de/dashboard/domain');
+			
+			$doc = new DomDocument();
+			$doc->validateOnParse = false;
+			$doc->strictErrorChecking = false;
+			$doc->loadHTML($this->content);
+
+			$arrTags = $doc->getElementsByTagName('div');
+			
+			$arrFetchTags = array("Mailserver","Webserver");
+
+			foreach ($arrTags as $node)
+			{
+				if ($node->getAttribute("class")=="c300 fl")
+				{
+					$component = $node->getElementsByTagName('h2');
+					
+					foreach ($component as $comp)
+					{
+						if (in_array(trim($comp->nodeValue),$arrFetchTags))
+						{
+							$arrDomains = $node->getElementsByTagName('li');
+							
+							foreach ($arrDomains as $domain)
+							{
+								$this->arrValue['domains_'.strtolower(trim($comp->nodeValue))][] = trim($domain->nodeValue);
+							}
+							
+						}
+					}
+				}
+			}
+		}
 		function getSettings()
 		{
 			$this -> execute('https://uberspace.de/dashboard/datasheet');
@@ -91,9 +130,9 @@ class classUberspaceWebRequest
 		
 		function floatval($strValue) 
 		{ 
-			$floatValue = ereg_replace("(^[0-9]*)(\\.|,)([0-9]*)(.*)", "\\1.\\3", $strValue); 
+			$floatValue = preg_replace("@(^[0-9]*)(\\.|,)([0-9]*)(.*)@", "\\1.\\3", $strValue); 
 			if (!is_numeric($floatValue)) 
-				$floatValue = ereg_replace("(^[0-9]*)(.*)", "\\1", $strValue); 
+				$floatValue = preg_replace("@(^[0-9]*)(.*)@", "\\1", $strValue); 
 			if (!is_numeric($floatValue)) 
 				$floatValue = 0; 
 				

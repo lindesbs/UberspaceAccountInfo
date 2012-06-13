@@ -4,7 +4,7 @@ class classUberspaceWebRequest
 	{
 		function __construct($username, $password)
 		{
-			$strCookieFile = "cookie_".time().".txt";
+			$this->strCookieFile = "cookie_".time().".txt";
 			
 			libxml_use_internal_errors(true);
 			setlocale(LC_ALL, 'de_DE'); 

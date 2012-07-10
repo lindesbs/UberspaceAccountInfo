@@ -9,7 +9,7 @@ Beispiel
 	print_r($uberspace->arrValue);
 
 	
-Generiert ein Array, mit dem Buntzernamen, der zugeorndete Host, angebundene Web- und MailDomains, dem eingestellten Wunschpreis und dem Guthaben auf dem Account
+Generiert ein Array, mit dem Benutzernamen, der zugeordnete Host, angebundene Web- und MailDomains, dem eingestellten Wunschpreis und dem Guthaben auf dem Account
 
 	Array
 	(

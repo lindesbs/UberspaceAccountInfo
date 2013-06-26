@@ -60,9 +60,6 @@
 
             $arrData=json_decode(trim($this->content));
             
-            print_r($arrData);
-            echo "<hr>";
-
             $this->arrValue['guthaben']=$arrData->current_amount;
             $this->arrValue['wunschpreis']=$arrData->price;
             $this->arrValue['domains_webserver']=(array) $arrData->domains->web;
